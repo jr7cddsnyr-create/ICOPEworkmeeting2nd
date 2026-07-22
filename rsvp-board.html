@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>明日線上會議 出席登記</title>
+<style>
+  :root{
+    --ink:#132A3A;
+    --navy:#0F3C4C;
+    --teal:#1F7A70;
+    --teal-soft:#E4F0EE;
+    --gold:#C9A15A;
+    --paper:#F6F5F1;
+    --card:#FFFFFF;
+    --line:#DCE3E2;
+    --yes:#2E7D4F;
+    --yes-bg:#E7F3EA;
+    --no:#B0473F;
+    --no-bg:#FBEBE9;
+    --pending:#8A8F8C;
+    --pending-bg:#F0EFEA;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    font-family:-apple-system,"PingFang TC","Microsoft JhengHei","Segoe UI",system-ui,sans-serif;
+    color:var(--ink);
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:28px 20px 60px;}
+
+  .eyebrow{
+    font-family:Georgia,"Times New Roman",serif;
+    font-style:italic;
+    font-size:13px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--teal);
+    margin:0 0 6px;
+  }
+  h1{
+    margin:0 0 4px;
+    font-size:26px;
+    font-weight:700;
+    letter-spacing:.02em;
+  }
+  .sub{color:#5B6866;font-size:14px;margin:0 0 24px;}
+
+  .tabs{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:22px;}
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:11px 8px;
+    font-size:14px;
+    font-weight:600;
+    color:#7B8583;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    margin-bottom:-2px;
+    transition:color .15s, border-color .15s;
+    user-select:none;
+  }
+  .tab.active{color:var(--navy);border-color:var(--teal);}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:22px;
+  }
+
+  label{display:block;font-size:13px;font-weight:600;color:var(--navy);margin:16px 0 6px;}
+  label:first-child{margin-top:0;}
+  select, input[type=text], textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    font-size:15px;
+    font-family:inherit;
+    color:var(--ink);
+    background:var(--paper);
+  }
+  select:focus, input:focus, textarea:focus{outline:2px solid var(--teal);outline-offset:1px;}
+  textarea{resize:vertical;min-height:64px;}
+
+  .choice-row{display:flex;gap:10px;margin-top:2px;}
+  .choice{
+    flex:1;
+    padding:13px 10px;
+    text-align:center;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+    font-size:14px;
+    color:#6B7573;
+    transition:all .12s;
+  }
+  .choice.sel-yes{border-color:var(--yes);background:var(--yes-bg);color:var(--yes);}
+  .choice.sel-no{border-color:var(--no);background:var(--no-bg);color:var(--no);}
+
+  .submit-btn{
+    width:100%;
+    margin-top:20px;
+    padding:13px;
+    border:none;
+    border-radius:8px;
+    background:var(--navy);
+    color:#fff;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:.02em;
+    cursor:pointer;
+    transition:background .15s;
+  }
+  .submit-btn:hover{background:var(--teal);}
+  .submit-btn:disabled{background:#B7BEBC;cursor:not-allowed;}
+
+  .msg{
+    margin-top:14px;
+    padding:10px 12px;
+    border-radius:7px;
+    font-size:13.5px;
+    font-weight:600;
+    display:none;
+  }
+  .msg.show{display:block;}
+  .msg.ok{background:var(--yes-bg);color:var(--yes);}
+  .msg.err{background:var(--no-bg);color:var(--no);}
+
+  /* board */
+  .board-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+  }
+  .stat-row{display:flex;gap:10px;}
+  .stat{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:12px 16px;
+    min-width:76px;
+    text-align:center;
+  }
+  .stat .num{
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:26px;
+    font-weight:700;
+    line-height:1;
+    color:var(--navy);
+  }
+  .stat.yes .num{color:var(--yes);}
+  .stat.no .num{color:var(--no);}
+  .stat .lbl{font-size:11px;letter-spacing:.06em;color:#7B8583;margin-top:4px;text-transform:uppercase;}
+
+  .refresh{
+    border:1px solid var(--line);
+    background:var(--card);
+    border-radius:7px;
+    padding:9px 14px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--teal);
+    cursor:pointer;
+  }
+  .refresh:hover{background:var(--teal-soft);}
+
+  .roster{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card);}
+  .row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 16px;
+    border-bottom:1px solid var(--line);
+    font-size:14.5px;
+  }
+  .row:last-child{border-bottom:none;}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .dot.yes{background:var(--yes);}
+  .dot.no{background:var(--no);}
+  .dot.pending{background:var(--pending);}
+  .row .name{font-weight:600;flex:1;}
+  .row .meta{font-size:12px;color:#8A9290;text-align:right;}
+  .row .status-tag{
+    font-size:11.5px;
+    font-weight:700;
+    padding:3px 9px;
+    border-radius:20px;
+  }
+  .status-tag.yes{background:var(--yes-bg);color:var(--yes);}
+  .status-tag.no{background:var(--no-bg);color:var(--no);}
+  .status-tag.pending{background:var(--pending-bg);color:var(--pending);}
+
+  .loading{text-align:center;color:#8A9290;font-size:13px;padding:30px 0;}
+
+  .locked-note{
+    margin-top:16px;
+    padding:12px 14px;
+    background:var(--teal-soft);
+    border:1px solid var(--teal);
+    border-radius:8px;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--teal);
+  }
+  fieldset{border:none;padding:0;margin:0;}
+  fieldset:disabled .choice{opacity:.5;cursor:not-allowed;}
+
+  .gate{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:32px 24px;
+    text-align:center;
+    max-width:340px;
+    margin:40px auto 0;
+  }
+  .gate .lock-icon{font-size:26px;margin-bottom:10px;}
+  .gate p{font-size:13px;color:#6B7573;margin:0 0 16px;}
+  .gate input{text-align:center;letter-spacing:.15em;}
+  .gate button{
+    width:100%;
+    margin-top:12px;
+    padding:11px;
+    border:none;
+    border-radius:7px;
+    background:var(--navy);
+    color:#fff;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .gate button:hover{background:var(--teal);}
+  .gate .err{color:var(--no);font-size:12.5px;margin-top:10px;display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Roll Call · 出席登記</p>
+  <h1>明日線上會議 出席意願調查</h1>
+  <p class="sub">請選擇貴院所並填寫是否出席，後台將即時彙整出席名單。</p>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="fill">院所填答</div>
+    <div class="tab" data-tab="board">後台看板</div>
+  </div>
+
+  <!-- FILL TAB -->
+  <div id="tab-fill">
+    <div class="card">
+      <fieldset id="fillFields">
+        <label for="inst">院所名稱</label>
+        <select id="inst">
+          <option value="">請選擇院所...</option>
+        </select>
+
+        <label>是否出席明日線上會議</label>
+        <div class="choice-row">
+          <div class="choice" id="choice-yes" data-v="yes">✓ 出席</div>
+          <div class="choice" id="choice-no" data-v="no">✕ 無法出席</div>
+        </div>
+
+        <label for="respondent">填答人（選填）</label>
+        <input type="text" id="respondent" placeholder="例：王小姐">
+
+        <label for="note">備註（選填）</label>
+        <textarea id="note" placeholder="如有代理出席人員或其他說明，請填寫於此"></textarea>
+
+        <button class="submit-btn" id="submitBtn" disabled>送出回覆</button>
+      </fieldset>
+      <div class="msg" id="msg"></div>
+      <div class="locked-note" id="lockedNote" style="display:none;"></div>
+    </div>
+    <p style="font-size:12px;color:#8A9290;margin-top:14px;">此表單每家院所僅能填答一次，送出後即鎖定無法修改，如需更正請聯繫承辦人。</p>
+  </div>
+
+  <!-- BOARD TAB -->
+  <div id="tab-board" style="display:none;">
+    <div class="gate" id="boardGate">
+      <div class="lock-icon">🔒</div>
+      <p>後台僅供承辦人查看，請輸入密碼</p>
+      <input type="password" id="gatePw" placeholder="密碼">
+      <button id="gateBtn">進入後台</button>
+      <div class="err" id="gateErr">密碼錯誤，請再試一次</div>
+    </div>
+
+    <div id="boardContent" style="display:none;">
+      <div class="board-head">
+        <div class="stat-row">
+          <div class="stat yes"><div class="num" id="cnt-yes">–</div><div class="lbl">出席</div></div>
+          <div class="stat no"><div class="num" id="cnt-no">–</div><div class="lbl">無法出席</div></div>
+          <div class="stat"><div class="num" id="cnt-pending">–</div><div class="lbl">未回覆</div></div>
+        </div>
+        <div class="refresh" id="refreshBtn">重新整理</div>
+      </div>
+      <div class="roster" id="roster">
+        <div class="loading">載入中...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const INSTITUTIONS = [
+  "台大北護","聯醫和平","汐止國泰","柳營奇美","佳里奇美","麻豆新樓","晨祐診所",
+  "雲林台大","中國北港","成大斗六","若瑟醫院","聖馬爾定","安家診所","陳明煌診所",
+  "曾良達診所","嘉義長庚","門諾(壽豐分院)","部立花蓮","光鹽診所","部立台東"
+];
+
+function keyFor(inst){ return "rsvp:" + encodeURIComponent(inst); }
+
+// board passcode — change this to whatever you'd like
+const BOARD_PASSCODE = "icope2026";
+let boardUnlocked = false;
+
+// populate select
+const instSel = document.getElementById('inst');
+INSTITUTIONS.forEach(name=>{
+  const opt = document.createElement('option');
+  opt.value = name; opt.textContent = name;
+  instSel.appendChild(opt);
+});
+
+// tabs
+const tabs = document.querySelectorAll('.tab');
+tabs.forEach(t=>{
+  t.addEventListener('click', ()=>{
+    tabs.forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const which = t.dataset.tab;
+    document.getElementById('tab-fill').style.display = which==='fill' ? 'block':'none';
+    document.getElementById('tab-board').style.display = which==='board' ? 'block':'none';
+    if(which==='board'){
+      if(boardUnlocked){
+        document.getElementById('boardGate').style.display='none';
+        document.getElementById('boardContent').style.display='block';
+        loadBoard();
+      } else {
+        document.getElementById('boardGate').style.display='block';
+        document.getElementById('boardContent').style.display='none';
+      }
+    }
+  });
+});
+
+function tryUnlock(){
+  const pw = document.getElementById('gatePw').value;
+  const errEl = document.getElementById('gateErr');
+  if(pw === BOARD_PASSCODE){
+    boardUnlocked = true;
+    errEl.style.display='none';
+    document.getElementById('boardGate').style.display='none';
+    document.getElementById('boardContent').style.display='block';
+    loadBoard();
+  } else {
+    errEl.style.display='block';
+  }
+}
+document.getElementById('gateBtn').addEventListener('click', tryUnlock);
+document.getElementById('gatePw').addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
+
+// choice buttons
+let selectedChoice = null;
+const choiceYes = document.getElementById('choice-yes');
+const choiceNo = document.getElementById('choice-no');
+const submitBtn = document.getElementById('submitBtn');
+
+function updateChoiceUI(){
+  choiceYes.classList.toggle('sel-yes', selectedChoice==='yes');
+  choiceNo.classList.toggle('sel-no', selectedChoice==='no');
+  checkReady();
+}
+choiceYes.addEventListener('click', ()=>{ selectedChoice='yes'; updateChoiceUI(); });
+choiceNo.addEventListener('click', ()=>{ selectedChoice='no'; updateChoiceUI(); });
+instSel.addEventListener('change', onInstChange);
+
+function checkReady(){
+  submitBtn.disabled = !(instSel.value && selectedChoice);
+}
+
+const msgEl = document.getElementById('msg');
+function showMsg(text, ok){
+  msgEl.textContent = text;
+  msgEl.className = 'msg show ' + (ok?'ok':'err');
+}
+
+const fillFields = document.getElementById('fillFields');
+const lockedNote = document.getElementById('lockedNote');
+
+function lockForm(rec){
+  fillFields.disabled = true;
+  lockedNote.style.display = 'block';
+  lockedNote.textContent = '此院所已於 ' + new Date(rec.submittedAt).toLocaleString('zh-TW') +
+    ' 完成填答（' + (rec.attending ? '出席' : '無法出席') + '），如需更正請聯繫承辦人。';
+}
+function unlockForm(){
+  fillFields.disabled = false;
+  lockedNote.style.display = 'none';
+  lockedNote.textContent = '';
+}
+
+async function onInstChange(){
+  msgEl.className = 'msg';
+  const inst = instSel.value;
+  selectedChoice = null;
+  updateChoiceUI();
+  document.getElementById('respondent').value = '';
+  document.getElementById('note').value = '';
+  if(!inst){ unlockForm(); checkReady(); return; }
+  try{
+    const r = await window.storage.get(keyFor(inst), true);
+    if(r && r.value){
+      lockForm(JSON.parse(r.value));
+    } else {
+      unlockForm();
+    }
+  }catch(e){
+    unlockForm();
+  }
+  checkReady();
+}
+
+submitBtn.addEventListener('click', async ()=>{
+  const inst = instSel.value;
+  if(!inst || !selectedChoice) return;
+  submitBtn.disabled = true;
+  submitBtn.textContent = '送出中...';
+  const record = {
+    institution: inst,
+    attending: selectedChoice==='yes',
+    respondent: document.getElementById('respondent').value.trim(),
+    note: document.getElementById('note').value.trim(),
+    submittedAt: new Date().toISOString()
+  };
+  try{
+    const existing = await window.storage.get(keyFor(inst), true).catch(()=>null);
+    if(existing && existing.value){
+      lockForm(JSON.parse(existing.value));
+      showMsg('此院所已完成填答，表單已鎖定。', false);
+      submitBtn.textContent = '送出回覆';
+      return;
+    }
+    const res = await window.storage.set(keyFor(inst), JSON.stringify(record), true);
+    if(res){
+      showMsg('已收到「' + inst + '」的回覆，謝謝填答！', true);
+      submitBtn.textContent = '已送出';
+      lockForm(record);
+    } else {
+      throw new Error('empty result');
+    }
+  }catch(e){
+    showMsg('送出失敗，請稍後再試一次。', false);
+    submitBtn.disabled = false;
+    submitBtn.textContent = '送出回覆';
+  }
+});
+
+// board
+async function loadBoard(){
+  const roster = document.getElementById('roster');
+  roster.innerHTML = '<div class="loading">載入中...</div>';
+  const records = {};
+  for(const inst of INSTITUTIONS){
+    try{
+      const r = await window.storage.get(keyFor(inst), true);
+      if(r && r.value) records[inst] = JSON.parse(r.value);
+    }catch(e){ /* no response yet */ }
+  }
+
+  let yesCount=0, noCount=0, pendingCount=0;
+  roster.innerHTML = '';
+  INSTITUTIONS.forEach(inst=>{
+    const rec = records[inst];
+    const row = document.createElement('div');
+    row.className = 'row';
+    let dotClass, tagClass, tagText, meta='';
+    if(!rec){
+      dotClass='pending'; tagClass='pending'; tagText='未回覆';
+      pendingCount++;
+    } else if(rec.attending){
+      dotClass='yes'; tagClass='yes'; tagText='出席';
+      yesCount++;
+      meta = rec.respondent || '';
+    } else {
+      dotClass='no'; tagClass='no'; tagText='無法出席';
+      noCount++;
+      meta = rec.respondent || '';
+    }
+    row.innerHTML = `
+      <div class="dot ${dotClass}"></div>
+      <div class="name">${inst}</div>
+      ${meta ? `<div class="meta">${meta}</div>` : ''}
+      <div class="status-tag ${tagClass}">${tagText}</div>
+    `;
+    roster.appendChild(row);
+  });
+
+  document.getElementById('cnt-yes').textContent = yesCount;
+  document.getElementById('cnt-no').textContent = noCount;
+  document.getElementById('cnt-pending').textContent = pendingCount;
+}
+
+document.getElementById('refreshBtn').addEventListener('click', loadBoard);
+</script>
+</body>
+</html>
